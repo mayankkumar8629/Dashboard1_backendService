@@ -14,3 +14,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  accountType  String   
+  profileImage String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  influencer   InfluencerDetails?
+  brand        BrandDetails?
+}
+
+model InfluencerDetails {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @unique
+  category          String?          
+  nicheTags         String[]         
+  totalFollowers    BigInt   @default(0)
+  averageEngagement Float?           
+  location          String?
+  website           String?
+  managerName       String?
+  managerEmail      String?
+
+  // Relationships
+  user              User              @relation(fields: [userId], references: [id])
+  connectedAccounts ConnectedAccount[]
+}
+
+model BrandDetails {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  companyName    String?
+  industry       String?
+  website        String?
+  contactPerson  String?
+  contactEmail   String?
+  budgetRange    String?
+
+  // relation to user
+  user           User     @relation(fields: [userId], references: [id])
+}
