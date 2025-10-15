@@ -43,7 +43,7 @@ model InfluencerDetails {
 
   // Relationships
   user              User              @relation(fields: [userId], references: [id])
-  connectedAccounts ConnectedAccount[]
+  
 }
 
 model BrandDetails {
