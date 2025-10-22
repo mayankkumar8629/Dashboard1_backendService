@@ -10,52 +10,86 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
   id           Int      @id @default(autoincrement())
   username     String   @unique
   email        String   @unique
-  passwordHash String
-  accountType  String   
+  passwordHash String?
+  accountType  String
   profileImage String?
   bio          String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  influencer   InfluencerDetails?
-  brand        BrandDetails?
+  influencer InfluencerDetails?
+  brand      BrandDetails?
+
+  connectedAccounts ConnectedAccount[]
+  refreshTokens     RefreshToken[] // <--- add this
 }
 
 model InfluencerDetails {
   id                Int      @id @default(autoincrement())
   userId            Int      @unique
-  category          String?          
-  nicheTags         String[]         
+  category          String?
+  nicheTags         String[]
   totalFollowers    BigInt   @default(0)
-  averageEngagement Float?           
+  averageEngagement Float?
   location          String?
   website           String?
   managerName       String?
   managerEmail      String?
 
   // Relationships
-  user              User              @relation(fields: [userId], references: [id])
-  
+  user User @relation(fields: [userId], references: [id])
 }
 
 model BrandDetails {
-  id             Int      @id @default(autoincrement())
-  userId         Int      @unique
-  companyName    String?
-  industry       String?
-  website        String?
-  contactPerson  String?
-  contactEmail   String?
-  budgetRange    String?
+  id            Int     @id @default(autoincrement())
+  userId        Int     @unique
+  companyName   String?
+  industry      String?
+  website       String?
+  contactPerson String?
+  contactEmail  String?
+  budgetRange   String?
 
   // relation to user
-  user           User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model ConnectedAccount {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  provider     String // "google", "instagram", "tiktok", "youtube", etc.
+  providerId   String // unique ID from the provider
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerId]) // ensures no duplicate provider accounts
+}
+
+model RefreshToken {
+  id             Int      @id @default(autoincrement())
+  tokenHash      String // sha256 hash of token value
+  userId         Int
+  revoked        Boolean  @default(false)
+  replacedByHash String? // hash of the token that replaced this one
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([tokenHash])
 }
