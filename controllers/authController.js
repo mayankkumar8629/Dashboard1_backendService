@@ -3,6 +3,8 @@ import { generateRefreshTokenValue ,hashToken} from "../utils/crypto.js"
 import { signAccessToken } from "../utils/jwt.js"
 import prisma from "../prismaClient.js"
 import dayjs from "dayjs"
+import dotenv from "dotenv";
+dotenv.config();
 
 
 const REFRESH_COOKIE_NAME="refreshToken";
@@ -34,6 +36,7 @@ export const signup = async(req,res)=>{
     if(!email || !password){
         return res.status(400).json({message:"Email and password required"});
     }
+    console.log(req.body);
     const existingUser = await prisma.user.findUnique({where:{email}});
     if(existingUser){
         return res.status(400).json({message:"Email already in use"});
@@ -46,6 +49,7 @@ export const signup = async(req,res)=>{
         data: { email,passwordHash,username,accountType},
         select: {id:true,email:true,username:true,accountType:true},
     })
+    console.log(user);
 
     //creating tokens
     const accessToken = signAccessToken({ userId: user.id, email: user.email, accountType: user.accountType });
