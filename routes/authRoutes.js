@@ -1,5 +1,5 @@
 import express from "express";
-import {signup,login,refreshTokenHandler,logout} from "../controllers/authController.js";
+import {signup,login,refreshTokenHandler,logout,googleLoginCallback,googleLoginRedirect} from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -9,5 +9,9 @@ router.post("/login",login);
 //refresh token route
 router.post("/refresh",refreshTokenHandler);
 router.post("/logout",logout);
+
+//google auth
+router.get("/auth/google",googleLoginRedirect);
+router.get("/auth/google/callback",googleLoginCallback);
 
 export default router;

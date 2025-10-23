@@ -25,7 +25,100 @@ function sendRefreshCookie(res, tokenValue, expiresAt) {
     ...COOKIE_OPTIONS,
     maxAge: maxAgeMs,
   });
+}  
+
+
+//google auth
+//redirecting the user to google oauth consent page
+export const googleLoginRedirect = (req,res)=>{
+  const state = crypto.randomBytes(16).toString("hex");
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const scope = encodeURIComponent("openid email profile");
+
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&access_type=offline&prompt=consent`;
+  res.redirect(url);
 }
+
+//handle google callback
+export const googleLoginCallback = async(req,res)=>{
+  const code = req.query.code;
+  if(!code){
+    return res.status(400).json({message:"No code provided by Google"});
+  }
+
+  try{
+    const tokenResponse = await axios.post(
+      "https://oauth2.googleapis.com/token",
+      new URLSearchParams({
+        code,
+        client_id:process.env.GOOGLE_CLIENT_ID,
+        client_secret:process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri:process.env.GOOGLE_REDIRECT_URI,
+        grant_type:"authorization_code",
+      }),
+      {headers:{"Content-Type":"application/x-www-form-urlencoded"}}
+    );
+    const {id_token,access_token,refresh_token:googleRefreshToken} = tokenResponse.data;
+    //decoding the id to get the user data
+
+    const base64Payload = id_token.split(".")[1];
+    const decodedPayload = JSON.parse(Buffer.from(base64Payload,"base64").toString());
+    const {email,sub:googleId,name}=decodedPayload;
+
+    //working in the user database
+    //checking for the existence of the user
+    let user = await prisma.user.findUnique({where:{email}});
+    if(!user){
+      user = await prisma.user.create({
+        data:{
+          email,
+          username:name,
+          passwordHash:null,
+          accountType:"influencer",
+        },
+      });
+    }
+
+    //checking if connectedAccount exists or not
+    const existingConnection = await prisma.connectedAccount.findUnique({
+      where:{provider_providerId:{provider:"google",providerId:googleId}}
+    });
+    if(!existingConnection){
+      await prisma.connectedAccount.create({
+        data:{
+          userId:user.id,
+          provider:"google",
+          providerId:googleId,
+          accessToken: access_token,
+          refreshToken: googleRefreshToken || null,
+
+        },
+      });
+    }
+    const accessToken = signAccessToken({ userId: user.id, email: user.email, accountType: user.accountType });
+    const refreshValue = generateRefreshTokenValue();
+    const refreshHash = hashToken(refreshValue);
+    const expiresAt = dayjs().add(REFRESH_TOKEN_EXPIRES_DAYS, "day").toDate();
+
+    await prisma.refreshToken.create({
+      data:{
+        tokenHash:refreshHash,
+        userId:user.id,
+        expiresAt,
+      }
+    });
+    //setting the refresh token cookie
+    sendRefreshCookie(res,refreshValue,expiresAt);
+    return res.redirect(`${process.env.FRONTEND_URL}/dashboard?accessToken=${accessToken}`);
+
+  }catch(error){
+    console.error("Google login error",error);
+    return res.status(500).json({message:"Google login failed"});
+  }
+}
+
+
 
 
 //signup
