@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/authRoutes.js";
 import instagramRoutes from "./routes/instagramRoutes.js";
+import tikTokRoutes from "./routes/tikTokRoutes.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ const PORT=process.env.PORT || 5000;
 
 app.use("/api/auth",authRoutes);
 app.use("/api/instagram",instagramRoutes);
+app.use("/api/tikTok",tikTokRoutes);
 app.get("/",(req,res)=>{
     res.send("API is running....");
 });
