@@ -3,7 +3,7 @@ import { youtubeLoginRedirect, youtubeLoginCallback } from "../controllers/youtu
 
 const router = express.Router();
 
-router.get("/auth/youtube", youtubeLoginRedirect);
-router.get("/auth/youtube/callback", youtubeLoginCallback);
+router.get("/connect", youtubeLoginRedirect);
+router.get("/callback", youtubeLoginCallback);
 
 export default router;
