@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 
 
 import authRoutes from "./routes/authRoutes.js";
+import instagramRoutes from "./routes/instagramRoutes.js";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({extended:true}));
 const PORT=process.env.PORT || 5000;
 
 app.use("/api/auth",authRoutes);
+app.use("/api/instagram",instagramRoutes);
 app.get("/",(req,res)=>{
     res.send("API is running....");
 });

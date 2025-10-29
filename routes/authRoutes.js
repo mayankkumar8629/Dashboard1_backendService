@@ -11,7 +11,7 @@ router.post("/refresh",refreshTokenHandler);
 router.post("/logout",logout);
 
 //google auth
-router.get("/auth/google",googleLoginRedirect);
-router.get("/auth/google/callback",googleLoginCallback);
+router.get("/google",googleLoginRedirect);
+router.get("/google/callback",googleLoginCallback);
 
 export default router;
